@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pomodoro Timer</title>
+    
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    
+    <!-- Tone.js for audio notifications -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom transition for smooth color changes */
+        .transition-colors-body {
+            transition: background-color 0.5s ease-in-out;
+        }
+        /* Custom styles for active mode button */
+        .mode-btn-active {
+            background-color: white;
+            color: black;
+        }
+    </style>
+</head>
+<body id="app-body" class="bg-slate-900 text-white transition-colors-body">
+
+    <div class="container mx-auto flex flex-col items-center justify-center min-h-screen p-4">
+
+        <div class="w-full max-w-md mx-auto">
+            
+            <!-- App Title -->
+            <header class="text-center mb-8">
+                <h1 class="text-4xl font-bold">Pomodoro Timer</h1>
+                <p class="text-slate-400 mt-1">Stay focused, be productive</p>
+            </header>
+
+            <!-- Main Timer Card -->
+            <main class="bg-white/10 p-6 md:p-8 rounded-2xl shadow-2xl backdrop-blur-md">
+                
+                <!-- Mode Selection -->
+                <div id="mode-selector" class="flex justify-center bg-slate-800/80 rounded-full p-1 mb-6">
+                    <button data-mode="pomodoro" class="mode-btn w-1/3 px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300">Pomodoro</button>
+                    <button data-mode="shortBreak" class="mode-btn w-1/3 px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300">Short Break</button>
+                    <button data-mode="longBreak" class="mode-btn w-1/3 px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300">Long Break</button>
+                </div>
+
+                <!-- Timer Display -->
+                <div class="text-center my-8">
+                    <h2 id="time-display" class="text-7xl md:text-8xl font-black tracking-tighter">25:00</h2>
+                </div>
+
+                <!-- Control Buttons -->
+                <div id="control-buttons" class="flex justify-center items-center space-x-4">
+                    <button id="start-pause-btn" class="bg-white text-slate-900 w-32 h-16 rounded-2xl text-2xl font-bold uppercase tracking-wider shadow-lg transform hover:scale-105 transition-transform duration-300">
+                        START
+                    </button>
+                    <button id="reset-btn" class="bg-transparent text-white/50 w-16 h-16 rounded-full flex items-center justify-center transform hover:bg-white/10 hover:text-white transition-all duration-300">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h5M20 20v-5h-5M4 4l16 16" />
+                        </svg>
+                    </button>
+                </div>
+            </main>
+
+            <!-- Pomodoro Counter -->
+            <div class="text-center mt-6">
+                <p class="text-slate-400">Pomodoros completed: <span id="pomodoro-count" class="font-bold text-white">0</span></p>
+            </div>
+
+            <!-- Settings Section -->
+            <div class="mt-8 text-center">
+                <button id="settings-toggle" class="text-slate-400 hover:text-white transition-colors duration-300">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 inline-block mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    Settings
+                </button>
+                <div id="settings-panel" class="hidden mt-4 bg-slate-800/80 p-4 rounded-lg max-w-sm mx-auto">
+                    <h3 class="font-bold mb-4">Time Settings (minutes)</h3>
+                    <div class="grid grid-cols-3 gap-4 text-slate-300">
+                        <div>
+                            <label for="pomodoro-input" class="block text-sm mb-1">Pomodoro</label>
+                            <input type="number" id="pomodoro-input" class="w-full bg-slate-700 text-white text-center rounded p-2" min="1">
+                        </div>
+                        <div>
+                            <label for="short-break-input" class="block text-sm mb-1">Short Break</label>
+                            <input type="number" id="short-break-input" class="w-full bg-slate-700 text-white text-center rounded p-2" min="1">
+                        </div>
+                        <div>
+                            <label for="long-break-input" class="block text-sm mb-1">Long Break</label>
+                            <input type="number" id="long-break-input" class="w-full bg-slate-700 text-white text-center rounded p-2" min="1">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- DOM Elements ---
+            const timeDisplay = document.getElementById('time-display');
+            const startPauseBtn = document.getElementById('start-pause-btn');
+            const resetBtn = document.getElementById('reset-btn');
+            const modeButtons = document.querySelectorAll('.mode-btn');
+            const pomodoroCountDisplay = document.getElementById('pomodoro-count');
+            const appBody = document.getElementById('app-body');
+            const settingsToggle = document.getElementById('settings-toggle');
+            const settingsPanel = document.getElementById('settings-panel');
+            const pomodoroInput = document.getElementById('pomodoro-input');
+            const shortBreakInput = document.getElementById('short-break-input');
+            const longBreakInput = document.getElementById('long-break-input');
+
+            // --- Timer State ---
+            let timer; // Will hold the setInterval instance
+            let isRunning = false;
+            let pomodoroCount = 0;
+            let longBreakInterval = 4; // Long break after 4 pomodoros
+
+            // --- Time Settings (in minutes) ---
+            let times = {
+                pomodoro: 25,
+                shortBreak: 5,
+                longBreak: 15
+            };
+
+            let currentMode = 'pomodoro';
+            let timeRemaining = times[currentMode] * 60;
+
+            // --- Audio ---
+            // Create a synth for the notification sound
+            const synth = new Tone.Synth().toDestination();
+
+            // --- Functions ---
+
+            /**
+             * Updates the timer display on the screen and in the page title.
+             */
+            function updateDisplay() {
+                const minutes = Math.floor(timeRemaining / 60);
+                const seconds = timeRemaining % 60;
+                const formattedTime = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+                timeDisplay.textContent = formattedTime;
+                document.title = `${formattedTime} - ${currentMode === 'pomodoro' ? 'Focus Time' : 'Break Time'}`;
+            }
+
+            /**
+             * Starts the timer countdown.
+             */
+            function startTimer() {
+                if (isRunning) return;
+
+                // Ensure Tone.js is started by user interaction
+                if (Tone.context.state !== 'running') {
+                    Tone.start();
+                }
+
+                isRunning = true;
+                startPauseBtn.textContent = 'PAUSE';
+                timer = setInterval(() => {
+                    timeRemaining--;
+                    updateDisplay();
+                    if (timeRemaining < 0) {
+                        handleTimerEnd();
+                    }
+                }, 1000);
+            }
+
+            /**
+             * Pauses the timer.
+             */
+            function pauseTimer() {
+                isRunning = false;
+                startPauseBtn.textContent = 'START';
+                clearInterval(timer);
+            }
+
+            /**
+             * Resets the timer to the current mode's default time.
+             */
+            function resetTimer() {
+                pauseTimer();
+                timeRemaining = times[currentMode] * 60;
+                updateDisplay();
+            }
+
+            /**
+             * Switches to the next mode automatically when a timer session ends.
+             */
+            function handleTimerEnd() {
+                pauseTimer();
+                // Play sound notification
+                synth.triggerAttackRelease("C5", "0.5");
+
+                if (currentMode === 'pomodoro') {
+                    pomodoroCount++;
+                    pomodoroCountDisplay.textContent = pomodoroCount;
+                    if (pomodoroCount % longBreakInterval === 0) {
+                        switchMode('longBreak');
+                    } else {
+                        switchMode('shortBreak');
+                    }
+                } else {
+                    switchMode('pomodoro');
+                }
+                
+                // Automatically start the next timer after a short delay
+                setTimeout(startTimer, 1000);
+            }
+
+            /**
+             * Switches the timer mode and updates the UI accordingly.
+             * @param {string} mode - The mode to switch to ('pomodoro', 'shortBreak', 'longBreak').
+             */
+            function switchMode(mode) {
+                currentMode = mode;
+                resetTimer(); // This also pauses and updates display
+
+                // Update UI colors and active button
+                const colors = {
+                    pomodoro: 'bg-slate-900',
+                    shortBreak: 'bg-emerald-900',
+                    longBreak: 'bg-sky-900'
+                };
+                appBody.className = `transition-colors-body text-white ${colors[mode]}`;
+                
+                modeButtons.forEach(button => {
+                    if (button.dataset.mode === mode) {
+                        button.classList.add('mode-btn-active');
+                    } else {
+                        button.classList.remove('mode-btn-active');
+                    }
+                });
+            }
+
+            /**
+             * Loads settings from localStorage if available.
+             */
+            function loadSettings() {
+                const savedTimes = localStorage.getItem('pomodoroTimes');
+                if (savedTimes) {
+                    times = JSON.parse(savedTimes);
+                }
+                pomodoroInput.value = times.pomodoro;
+                shortBreakInput.value = times.shortBreak;
+                longBreakInput.value = times.longBreak;
+            }
+
+            /**
+             * Saves the current time settings to localStorage.
+             */
+            function saveSettings() {
+                times.pomodoro = parseInt(pomodoroInput.value, 10) || 25;
+                times.shortBreak = parseInt(shortBreakInput.value, 10) || 5;
+                times.longBreak = parseInt(longBreakInput.value, 10) || 15;
+                localStorage.setItem('pomodoroTimes', JSON.stringify(times));
+                // If the current mode's time was changed, reset the timer to reflect it
+                if (!isRunning) {
+                   resetTimer();
+                }
+            }
+
+            // --- Event Listeners ---
+
+            // Start/Pause button
+            startPauseBtn.addEventListener('click', () => {
+                if (isRunning) {
+                    pauseTimer();
+                } else {
+                    startTimer();
+                }
+            });
+
+            // Reset button
+            resetBtn.addEventListener('click', resetTimer);
+
+            // Mode selection buttons
+            modeButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    switchMode(button.dataset.mode);
+                });
+            });
+
+            // Settings toggle
+            settingsToggle.addEventListener('click', () => {
+                settingsPanel.classList.toggle('hidden');
+            });
+
+            // Settings input fields
+            [pomodoroInput, shortBreakInput, longBreakInput].forEach(input => {
+                input.addEventListener('change', saveSettings);
+            });
+
+            // --- Initialization ---
+            loadSettings();
+            switchMode('pomodoro'); // Initialize the app in pomodoro mode
+        });
+    </script>
+</body>
+</html>
